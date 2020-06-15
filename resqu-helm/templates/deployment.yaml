@@ -43,18 +43,22 @@ spec:
           readinessProbe:
             tcpSocket:
               port: 8888
+          resources:
+            {{- toYaml .Values.resources | nindent 12 }}
           volumeMounts:
             - name: config
               mountPath: /resqu
+            {{- if .Values.extraVolumeMounts }}
             {{- toYaml .Values.extraVolumeMounts | nindent 12 }}
-          resources:
-            {{- toYaml .Values.resources | nindent 12 }}
+            {{- end }}
       volumes:
         - name: config
           configMap:
             name: {{ include "resqu.fullname" . }}-configmap
             defaultMode: 0755
-        {{- toYaml .Values.extraVolumes | nindent 12 }}
+        {{- if .Values.extraVolumes }}
+        {{- toYaml .Values.extraVolumes | nindent 8 }}
+        {{- end }}
       {{- with .Values.nodeSelector }}
       nodeSelector:
         {{- toYaml . | nindent 8 }}
