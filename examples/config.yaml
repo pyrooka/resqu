@@ -1,0 +1,8 @@
+sqlite:
+  connection:
+    path: /db/employees.sqlite3
+  endpoints:
+    - url: /employees
+      query: SELECT * FROM emp LIMIT 10
+    - url: /employees/{empNo}
+      query: SELECT * FROM emp WHERE empno = {empNo}

@@ -1,0 +1,1 @@
+The sample SQLite database downloaded from here: https://github.com/cristiscu/employees-test-database
