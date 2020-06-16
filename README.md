@@ -3,6 +3,15 @@ resqu (RESt from QUeries) helps you to serve database query results as JSON via 
 
 NOTE: the project is under development, so some breaking changes may happen
 
+## Usage
+### Docker
+`docker run -v $(pwd)/config.yaml:/resqu/config.yaml pyrooka/resqu`
+
+If you want to use docker compose check the examples directory.
+
+### Helm
+`helm upgrade -i resqu ./resqu-helm`
+
 ### Environment variables
 - `SERVER_PORT`
 
