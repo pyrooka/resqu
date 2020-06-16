@@ -57,11 +57,10 @@ func (bq *BigQuery) Run(ctx context.Context, query string) (result []byte, err e
 }
 
 func buildResult(res *bigquery.RowIterator) (result []byte, err error) {
-	resultRows := []map[string]bigquery.Value{}
-	schema := res.Schema
+	rows := []map[string]bigquery.Value{}
 
 	for {
-		var row []bigquery.Value
+		var row map[string]bigquery.Value
 		err = res.Next(&row)
 		if err == iterator.Done {
 			break
@@ -70,17 +69,9 @@ func buildResult(res *bigquery.RowIterator) (result []byte, err error) {
 			return
 		}
 
-		rowMap := map[string]bigquery.Value{}
-
-		for i, val := range row {
-			fieldName := schema[i].Name
-			rowMap[fieldName] = val
-		}
-
-		resultRows = append(resultRows, rowMap)
+		rows = append(rows, row)
 	}
 
-	result, err = json.Marshal(resultRows)
-
+	result, err = json.Marshal(rows)
 	return
 }
