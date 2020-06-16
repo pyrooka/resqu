@@ -16,8 +16,7 @@ import (
 )
 
 type response struct {
-	Data  json.RawMessage `json:"data,omitempty"`
-	Error error           `json:"error,omitempty"`
+	Data json.RawMessage `json:"data"`
 }
 
 func loggingMiddleware(next http.Handler) http.Handler {
@@ -84,7 +83,8 @@ func main() {
 							"params": params,
 						}).Errorf(`[%s] Ooops. There are more than 1 parameter for key "%s".`, name, param)
 
-						continue
+						http.Error(w, fmt.Sprintf(`there are more than 1 parameter for key "%s"`, param), http.StatusBadRequest)
+						return
 					}
 					// Only use the first value for each parameter in the HTTP query.
 					query = strings.ReplaceAll(query, fmt.Sprintf("{%s}", param), values[0])
@@ -104,11 +104,13 @@ func main() {
 					log.WithFields(log.Fields{
 						"query": query,
 					}).Error("[%s] Error while executing the query:", name, err)
+
+					http.Error(w, err.Error(), http.StatusInternalServerError)
+					return
 				}
 
 				resp := response{
-					Data:  result,
-					Error: err,
+					Data: result,
 				}
 
 				w.Header().Set("Content-Type", "application/json")
