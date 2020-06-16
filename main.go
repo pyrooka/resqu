@@ -4,12 +4,13 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
-	"log"
 	"net/http"
 	"os"
 	"strings"
 
 	"github.com/pyrooka/resqu/db"
+
+	log "github.com/sirupsen/logrus"
 
 	"github.com/gorilla/mux"
 )
@@ -19,11 +20,20 @@ type response struct {
 	Error error           `json:"error,omitempty"`
 }
 
+func loggingMiddleware(next http.Handler) http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		log.WithFields(log.Fields{
+			"user-agent": r.UserAgent(),
+		}).Infof("%s %s", r.Method, r.URL.RequestURI())
+		next.ServeHTTP(w, r)
+	})
+}
+
 func main() {
 	// Read and parse the config.
 	c, err := readConfig()
 	if err != nil {
-		log.Fatal(err)
+		log.Fatal("Error while reading the config:", err)
 	}
 
 	port, exists := os.LookupEnv("SERVER_PORT")
@@ -32,19 +42,24 @@ func main() {
 	}
 
 	router := mux.NewRouter()
+	router.Use(loggingMiddleware)
 
 	// Init the database backends and set up the endpoints.
 	for name, config := range c {
 		// Get the DB from the name of the map in the yaml.
 		db, err := db.GetDb(name)
 		if err != nil {
-			log.Fatal(err)
+			log.WithFields(log.Fields{
+				"config": config,
+			}).Fatalf("[%s] Error while loading the DB: %s", name, err)
 		}
 
 		// Initialize this DB backend.
 		err = db.Init(config.Connection)
 		if err != nil {
-			log.Fatalf("Error while initializing %s: %s", name, err)
+			log.WithFields(log.Fields{
+				"config": config,
+			}).Fatalf("[%s] Error while initializing the DB: %s", name, err)
 		}
 
 		// Create the endpoints.
@@ -64,7 +79,11 @@ func main() {
 				}
 				for param, values := range params {
 					if len(values) > 1 {
-						log.Println(fmt.Sprintf(`Ooops. There are more than 1 parameter for key "%s" in the query: %s`, param, values))
+						log.WithFields(log.Fields{
+							"vars":   vars,
+							"params": params,
+						}).Errorf(`[%s] Ooops. There are more than 1 parameter for key "%s".`, name, param)
+
 						continue
 					}
 					// Only use the first value for each parameter in the HTTP query.
@@ -74,10 +93,17 @@ func main() {
 				// TODO: implement proper context handling.
 				ctx := context.Background()
 
+				log.WithFields(log.Fields{
+					"vars":   vars,
+					"params": params,
+				}).Debugf("[%s] Executing a query: %s", name, query)
+
 				// BOOOM.
 				result, err := db.Run(ctx, query)
 				if err != nil {
-					log.Println("Error while executing the query:", err)
+					log.WithFields(log.Fields{
+						"query": query,
+					}).Error("[%s] Error while executing the query:", name, err)
 				}
 
 				resp := response{
@@ -93,7 +119,9 @@ func main() {
 
 	addr := fmt.Sprintf("0.0.0.0:%s", port)
 
-	log.Println("HTTP server listening on:", addr)
+	log.WithFields(log.Fields{
+		"Address": addr,
+	}).Info("HTTP server is listening")
 
 	log.Fatal(http.ListenAndServe(addr, router))
 }
