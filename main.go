@@ -71,6 +71,8 @@ func main() {
 			}).Fatalf("[%s] Error while initializing the DB: %s", name, err)
 		}
 
+		log.Infof("[%s] Initialized.", name)
+
 		// Create the endpoints.
 		for _, e := range config.Endpoints {
 			// Copy the values.
