@@ -40,6 +40,16 @@ func main() {
 		port = "8888"
 	}
 
+	debug, exists := os.LookupEnv("DEBUG")
+	if exists != true {
+		debug = "true"
+	}
+	debug = strings.ToLower(debug)
+
+	if debug == "true" || debug == "1" {
+		log.SetLevel(log.DebugLevel)
+	}
+
 	router := mux.NewRouter()
 	router.Use(loggingMiddleware)
 
