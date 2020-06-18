@@ -16,6 +16,11 @@ If you want to use docker compose check the examples directory.
 - `SERVER_PORT`
 
 ### DB configs
+
+Templates you can use:
+- `url`: [gorilla/mux](https://github.com/gorilla/mux#registered-urls)
+- `query`: go [text/template](https://golang.org/pkg/text/template/#hdr-Actions)
+
 E.g. `config.yaml`:
 ```yaml
 sqlite:
@@ -23,9 +28,9 @@ sqlite:
     path: /db/employees.sqlite3
   endpoints:
     - url: /employees
-      query: SELECT * FROM emp LIMIT 10
+      query: SELECT * FROM emp {{if .limit}} LIMIT {{.limit}} {{end}} {{if .offset}} OFFSET {{.offset}} {{end}}
     - url: /employees/{empNo}
-      query: SELECT * FROM emp WHERE empno = {empNo}
+      query: SELECT * FROM emp WHERE empno = {{.empNo}}
 ```
 
 #### SQLite3
