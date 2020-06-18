@@ -1,12 +1,14 @@
 package main
 
 import (
+	"bytes"
 	"context"
 	"encoding/json"
 	"fmt"
 	"net/http"
 	"os"
 	"strings"
+	"text/template"
 
 	"github.com/pyrooka/resqu/db"
 
@@ -74,20 +76,24 @@ func main() {
 		log.Infof("[%s] Initialized.", name)
 
 		// Create the endpoints.
-		for _, e := range config.Endpoints {
+		for i, e := range config.Endpoints {
 			// Copy the values.
 			URL := e.URL
 			rawQuery := e.Query
 
+			// Build the template.
+			t, err := template.New(fmt.Sprintf("%s_%d", name, i)).Parse(rawQuery)
+			if err != nil {
+				log.WithFields(log.Fields{
+					"rawQuery": rawQuery,
+				}).Fatalf("[%s] Error building the template from the query: %s", name, err)
+			}
+
 			router.HandleFunc(URL, func(w http.ResponseWriter, r *http.Request) {
 				vars := mux.Vars(r)
 				params := r.URL.Query()
-				query := rawQuery
 
-				// Replace the mux variables and the parameters in the SQL query with the values from the URL.
-				for muxVar, value := range vars {
-					query = strings.ReplaceAll(query, fmt.Sprintf("{%s}", muxVar), value)
-				}
+				// Check the parameters and add them to the vars.
 				for param, values := range params {
 					if len(values) > 1 {
 						log.WithFields(log.Fields{
@@ -98,16 +104,30 @@ func main() {
 						http.Error(w, fmt.Sprintf(`there are more than 1 parameter for key "%s"`, param), http.StatusBadRequest)
 						return
 					}
-					// Only use the first value for each parameter in the HTTP query.
-					query = strings.ReplaceAll(query, fmt.Sprintf("{%s}", param), values[0])
+
+					vars[param] = values[0]
 				}
+
+				q := new(bytes.Buffer)
+
+				err = t.Execute(q, vars)
+				if err != nil {
+					log.WithFields(log.Fields{
+						"vars":     vars,
+						"rawQuery": rawQuery,
+					}).Errorf(`[%s]. Error while executing the template "%s".`, name, err)
+
+					http.Error(w, "Error while executing the template. Check the server logs.", http.StatusInternalServerError)
+					return
+				}
+
+				query := q.String()
 
 				// TODO: implement proper context handling.
 				ctx := context.Background()
 
 				log.WithFields(log.Fields{
-					"vars":   vars,
-					"params": params,
+					"vars": vars,
 				}).Debugf("[%s] Executing a query: %s", name, query)
 
 				// BOOOM.
