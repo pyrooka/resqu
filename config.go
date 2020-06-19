@@ -16,8 +16,8 @@ type dbConfig struct {
 	Endpoints  []endpoint             `yaml:"endpoints"`
 }
 
-func readConfig() (c map[string]dbConfig, err error) {
-	data, err := ioutil.ReadFile("config.yaml")
+func readConfig(file string) (c map[string]dbConfig, err error) {
+	data, err := ioutil.ReadFile(file)
 	if err != nil {
 		return
 	}

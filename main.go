@@ -32,7 +32,7 @@ func loggingMiddleware(next http.Handler) http.Handler {
 
 func main() {
 	// Read and parse the config.
-	c, err := readConfig()
+	c, err := readConfig("config.yaml")
 	if err != nil {
 		log.Fatal("Error while reading the config:", err)
 	}
