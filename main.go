@@ -135,7 +135,7 @@ func main() {
 				if err != nil {
 					log.WithFields(log.Fields{
 						"query": query,
-					}).Error("[%s] Error while executing the query:", name, err)
+					}).Errorf("[%s] Error while executing the query: %s", name, err)
 
 					http.Error(w, err.Error(), http.StatusInternalServerError)
 					return
