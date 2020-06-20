@@ -9,6 +9,11 @@ import (
 func processSQLRows(rows *sql.Rows) (result []byte, err error) {
 	columns, err := rows.Columns()
 	if err != nil {
+		if err == sql.ErrNoRows {
+			// No rows in the result so return an empty array without an error.
+			return []byte{}, nil
+		}
+
 		return
 	}
 	count := len(columns)
