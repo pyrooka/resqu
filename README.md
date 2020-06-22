@@ -1,4 +1,4 @@
-# resqu
+ # resqu [![Build Status](https://github.com/pyrooka/resqu/workflows/build/badge.svg)](https://github.com/pyrooka/resqu/workflows/build/badge.svg)
 resqu (RESt from QUeries) helps you to serve database query results as JSON via HTTP.
 
 NOTE: the project is under development, so some breaking changes may happen
