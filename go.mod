@@ -5,6 +5,7 @@ go 1.14
 require (
 	cloud.google.com/go v0.58.0 // indirect
 	cloud.google.com/go/bigquery v1.8.0
+	github.com/DATA-DOG/go-sqlmock v1.4.1
 	github.com/gorilla/mux v1.7.4
 	github.com/jackc/pgconn v1.6.0 // indirect
 	github.com/jackc/pgx/v4 v4.6.0
