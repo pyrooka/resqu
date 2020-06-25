@@ -8,14 +8,21 @@ import (
 	"net/http"
 	"os"
 	"strings"
+	"sync"
 	"text/template"
 
+	ccache "github.com/pyrooka/resqu/cache"
 	"github.com/pyrooka/resqu/db"
+	"github.com/robfig/cron"
 
 	log "github.com/sirupsen/logrus"
 
 	"github.com/gorilla/mux"
 )
+
+var cronJobs = []string{}
+
+var mutex = &sync.Mutex{}
 
 type response struct {
 	Data json.RawMessage `json:"data"`
@@ -42,6 +49,12 @@ func main() {
 		port = "8888"
 	}
 
+	cacheType, exists := os.LookupEnv("CACHE_TYPE")
+	if exists != true {
+		cacheType = "local"
+	}
+	cacheType = strings.ToLower(cacheType)
+
 	debug, exists := os.LookupEnv("DEBUG")
 	if exists != true {
 		debug = "true"
@@ -50,6 +63,14 @@ func main() {
 
 	if debug == "true" || debug == "1" {
 		log.SetLevel(log.DebugLevel)
+	}
+
+	// Create a cache.
+	cache, err := ccache.NewCache(cacheType)
+	if err != nil {
+		log.WithFields(log.Fields{
+			"cacheType": cacheType,
+		}).Fatalf("Error while initializing cache: %s", err)
 	}
 
 	router := mux.NewRouter()
@@ -84,6 +105,13 @@ func main() {
 			// Copy the values.
 			URL := e.URL
 			rawQuery := e.Query
+			cacheConf := e.Cache
+
+			var watcher *cron.Cron
+			if cacheConf.Enabled && cacheConf.ClearTime != "" {
+				watcher = cron.New()
+				watcher.Start()
+			}
 
 			// Build the template.
 			t, err := template.New(fmt.Sprintf("%s_%d", name, i)).Parse(rawQuery)
@@ -127,6 +155,30 @@ func main() {
 
 				query := q.String()
 
+				if cacheConf.Enabled {
+					// Read from cache is exists.
+					result, err := cache.Get(query)
+					if err != nil {
+						l := log.WithField("query", query)
+						if err == ccache.ErrNotFound {
+							l.Infof("[%s] Missing key.", name)
+						} else {
+							l.Errorf("[%s] Cannot get cache: %s", name, err)
+						}
+
+					} else {
+						log.WithField("query", query).Infof("[%s] Using result from cache.", name)
+						resp := response{
+							Data: result,
+						}
+
+						w.Header().Set("Content-Type", "application/json")
+						json.NewEncoder(w).Encode(resp)
+
+						return
+					}
+				}
+
 				// TODO: implement proper context handling.
 				ctx := context.Background()
 
@@ -143,6 +195,44 @@ func main() {
 
 					http.Error(w, err.Error(), http.StatusInternalServerError)
 					return
+				}
+
+				if cacheConf.Enabled {
+					// Cache the result.
+					err = cache.Set(query, result)
+					if err != nil {
+						log.WithFields(log.Fields{
+							"query":      query,
+							"resultSize": len(result),
+						}).Errorf("[%s] Cannot set to cache: %s", name, err)
+					} else {
+						// Check if we already have a cron job for this query.
+						if cacheConf.ClearTime != "" && !stringInSlice(cronJobs, query) {
+							err = watcher.AddFunc(cacheConf.ClearTime, func() {
+								err = cache.Remove(query)
+								if err != nil {
+									l := log.WithField("query", query)
+									if err == ccache.ErrNotFound {
+										l.Infof("[%s] Missing key.", name)
+									} else {
+										l.Errorf("[%s] Cannot remove key from cache: %s", name, err)
+									}
+								} else {
+									log.Infof("[%s] Removed from cache.", name)
+								}
+							})
+							if err != nil {
+								log.WithFields(log.Fields{
+									"clearTime": cacheConf.ClearTime,
+									"query":     query,
+								}).Errorf("[%s] Error while creating a cron function: %s", name, err)
+							} else {
+								mutex.Lock()
+								cronJobs = append(cronJobs, query)
+								mutex.Unlock()
+							}
+						}
+					}
 				}
 
 				resp := response{
