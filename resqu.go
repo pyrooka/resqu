@@ -56,7 +56,11 @@ func main() {
 	router.Use(loggingMiddleware)
 
 	// Init the database backends and set up the endpoints.
-	for name, config := range c {
+	for n, cc := range c {
+		// Copy the vars.
+		name := n
+		config := cc
+
 		// Get the DB from the name of the map in the yaml.
 		db, err := db.GetDb(name)
 		if err != nil {
