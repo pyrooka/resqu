@@ -52,7 +52,7 @@ func (l *Local) Remove(key string) error {
 	return err
 }
 
-// Clear removes all entries form the cache.
+// Clear removes all entries from the cache.
 func (l *Local) Clear() error {
 	err := l.cache.Reset()
 
