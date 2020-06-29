@@ -8,13 +8,13 @@ import (
 // ErrNotFound means the key is not in the cache.
 var ErrNotFound = errors.New("entry not found")
 
-// Cache ...
+// Cache is an interface for interacting with various cache backend.
 type Cache interface {
-	init() error
-	Set(key string, data []byte) error
-	Get(key string) ([]byte, error) // Should return `ErrNotFound` if the key not in the cache.
-	Remove(key string) error        // Should return `ErrNotFound` if the key not in the cache.
-	Clear() error
+	init() error                       // Initalizes the backend.
+	Set(key string, data []byte) error // Set a key-value to the cache.
+	Get(key string) ([]byte, error)    // Should return `ErrNotFound` if the key not in the cache.
+	Remove(key string) error           // Should return `ErrNotFound` if the key not in the cache.
+	Clear() error                      // Clear the whole cache.
 }
 
 // NewCache returns a newly created `local` or `redis` cache system.
