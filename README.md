@@ -14,6 +14,7 @@ If you want to use docker compose check the examples directory.
 
 ### Environment variables
 - `SERVER_PORT`
+- `CACHE_TYPE`: local or redis
 
 ### DB configs
 
@@ -29,8 +30,13 @@ sqlite:
   endpoints:
     - url: /employees
       query: SELECT * FROM emp {{if .limit}} LIMIT {{.limit}} {{end}} {{if .offset}} OFFSET {{.offset}} {{end}}
+      cache:
+        enabled: true
+        clearTime: "*/10 * * * * *" # Clear the cache for this URL in every 10 mins. https://github.com/robfig/cron
     - url: /employees/{empNo}
       query: SELECT * FROM emp WHERE empno = {{.empNo}}
+      cache:
+        enabled: false
 ```
 
 #### SQLite3
