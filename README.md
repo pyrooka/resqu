@@ -32,7 +32,7 @@ sqlite:
       query: SELECT * FROM emp {{if .limit}} LIMIT {{.limit}} {{end}} {{if .offset}} OFFSET {{.offset}} {{end}}
       cache:
         enabled: true
-        clearTime: "*/10 * * * * *" # Clear the cache for this URL in every 10 mins. https://github.com/robfig/cron
+        clearTime: "0 */10 * * * *" # Clear the cache for this URL in every 10 mins. https://github.com/robfig/cron
     - url: /employees/{empNo}
       query: SELECT * FROM emp WHERE empno = {{.empNo}}
       cache:
