@@ -6,10 +6,12 @@ require (
 	cloud.google.com/go v0.58.0 // indirect
 	cloud.google.com/go/bigquery v1.8.0
 	github.com/DATA-DOG/go-sqlmock v1.4.1
+	github.com/allegro/bigcache v1.2.1
 	github.com/gorilla/mux v1.7.4
 	github.com/jackc/pgconn v1.6.0 // indirect
 	github.com/jackc/pgx/v4 v4.6.0
 	github.com/mattn/go-sqlite3 v2.0.3+incompatible
+	github.com/robfig/cron v1.2.0
 	github.com/sirupsen/logrus v1.6.0
 	golang.org/x/crypto v0.0.0-20200604202706-70a84ac30bf9 // indirect
 	golang.org/x/net v0.0.0-20200602114024-627f9648deb9 // indirect

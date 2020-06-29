@@ -6,9 +6,15 @@ import (
 	"gopkg.in/yaml.v2"
 )
 
+type cache struct {
+	Enabled   bool   `yaml:"enabled"`
+	ClearTime string `yaml:"clearTime"`
+}
+
 type endpoint struct {
 	URL   string `yaml:"url"`
 	Query string `yaml:"query"`
+	Cache cache  `yaml:"cache"`
 }
 
 type dbConfig struct {
