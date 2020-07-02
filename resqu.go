@@ -2,7 +2,6 @@ package main
 
 import (
 	"bytes"
-	"context"
 	"encoding/json"
 	"fmt"
 	"net/http"
@@ -179,15 +178,12 @@ func main() {
 					}
 				}
 
-				// TODO: implement proper context handling.
-				ctx := context.Background()
-
 				log.WithFields(log.Fields{
 					"vars": vars,
 				}).Debugf("[%s] Executing a query: %s", name, query)
 
 				// BOOOM.
-				result, err := db.Run(ctx, query)
+				result, err := db.Run(r.Context(), query)
 				if err != nil {
 					log.WithFields(log.Fields{
 						"query": query,
