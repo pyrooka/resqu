@@ -4,5 +4,10 @@ sqlite:
   endpoints:
     - url: /employees
       query: SELECT * FROM emp {{if .limit}} LIMIT {{.limit}} {{end}} {{if .offset}} OFFSET {{.offset}} {{end}}
+      cache:
+        enabled: true
+        clearTime: "*/10 * * * * *"
     - url: /employees/{empNo}
       query: SELECT * FROM emp WHERE empno = {{.empNo}}
+      cache:
+        enabled: false
